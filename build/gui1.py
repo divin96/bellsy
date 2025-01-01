@@ -1,7 +1,8 @@
 from pathlib import Path
-from tkinter import Tk, Canvas, Button, PhotoImage, Frame,ttk,BOTH
+from tkinter import Tk, Canvas, Button, PhotoImage, Frame,ttk,BOTH,Entry,END
 import os
 import datetime
+import re
 
 
 
@@ -128,6 +129,23 @@ class Frame1(Frame):
                 pickle.dump(creds, token)
         self.switch_frame_callback()
         service = build('calendar', 'v3', credentials=creds)
+        events_result = service.events().list(
+        calendarId='primary', 
+        maxResults=10, 
+        singleEvents=True, 
+        orderBy='startTime'
+        ).execute()
+        #print(events_result)
+
+    # Print the events
+    
+        calendar_list = service.calendarList().list().execute()
+        global d
+        d=list()
+        for calendar in calendar_list['items']:
+            if calendar['summary']!="Birthdays":
+                d.append(calendar['id'])
+
 
     # Hover effect for Button 1
     def button_1_hover(self, event):
@@ -177,7 +195,7 @@ class Frame2(Frame):
 
         self.button_image_4 = PhotoImage(file=relative_to_assets("button_4.png", frame_version="frame2"))
         self.button_4 = Button(self, image=self.button_image_4, borderwidth=0, highlightthickness=0,
-                               command=lambda: print("button_4 clicked"), relief="flat")
+                               command=self.save, relief="flat")
         self.button_4.place(x=51.0, y=30.0, width=143.0, height=47.0)
 
         self.image_image_2 = PhotoImage(file=relative_to_assets("image_2.png", frame_version="frame2"))
@@ -208,15 +226,27 @@ class Frame2(Frame):
             self.tree.column("End Time", width=150)
 
             # Fetch events for the first calendar
-            events_data = self.get_calendar_events(service, 'divinishimwedusenge@gmail.com')
+            events_data = self.get_calendar_events(service, d[0])
             
+            if events_data is not None:
+                self.tempo1= events_data
+            else:
+                self.tempo1=self.tree.get_children()
             # Insert event data into table
             try:
-                for event in events_data:
-                    start_time = self.convert_utc_to_local(str(event["start"]['dateTime']))
-                    end_time = self.convert_utc_to_local(str(event["end"]['dateTime']))
-                    self.tree.insert("", "end", values=(event["summary"], start_time, end_time))
-            except Exception as err:print(err)
+                if events_data is not None:
+                    for event in events_data:
+                        start_time = self.convert_utc_to_local(str(event["start"]['dateTime']))
+                        end_time = self.convert_utc_to_local(str(event["end"]['dateTime']))
+                        self.tree.insert("", "end", values=(event["summary"], start_time, end_time))
+                else:
+                    global all_items1
+                    all_items1 = [self.tree1.item(item)["values"] for item in self.tree1.get_children("")]
+                    for a in all_items:
+                        self.tree.insert("", "end", values=tuple(a))
+
+            except Exception as err:
+                print(err)
 
             # Style the Treeview
             self.style_treeview()
@@ -224,9 +254,13 @@ class Frame2(Frame):
             # Place Treeview widget on the window
             self.tree.pack(fill=BOTH, expand=True)
             self.table1_created = True
+            self.entering(self.table1_frame,self.tree)
 
         if self.table2_created:
             self.table2_created = False
+        self.tree.bind("<BackSpace>",lambda e:self.tree.delete(self.tree.selection()))
+
+
 
     def creat_t2(self):
         if not self.table2_created:
@@ -245,14 +279,22 @@ class Frame2(Frame):
             self.tree1.column("End Time", width=150)
 
             # Fetch events for the second calendar
-            events_data = self.get_calendar_events(service, 'e2bb577c71d9ce40d419b3bb474fe7b55a9474693b978a98da455cb56cc3cf91@group.calendar.google.com')
-            
+            events_data = self.get_calendar_events(service, d[1])
+            if events_data is not None:
+                self.tempo= events_data
             # Insert event data into table
             try:
-                for event in events_data:
-                    start_time = self.convert_utc_to_local(str(event["start"]['dateTime']))
-                    end_time = self.convert_utc_to_local(str(event["end"]['dateTime']))
-                    self.tree1.insert("", "end", values=(event["summary"], start_time, end_time))
+                if events_data is not None:
+                    for event in events_data:
+                        start_time = self.convert_utc_to_local(str(event["start"]['dateTime']))
+                        end_time = self.convert_utc_to_local(str(event["end"]['dateTime']))
+                        self.tree1.insert("", "end", values=(event["summary"], start_time, end_time))
+                
+                else:
+                    global all_items
+                    all_items = [self.tree.item(item)["values"] for item in self.tree.get_children("")]
+                    for a in all_items1:
+                        self.tree1.insert("", "end", values=tuple(a))           
             except Exception as err:
                 print(err)
 
@@ -261,32 +303,65 @@ class Frame2(Frame):
 
             # Place Treeview widget on the window
             self.tree1.pack(fill=BOTH, expand=True)
+
             self.table2_created = True
+
+            self.entering(self.table2_frame,self.tree1)
 
         if self.table1_created:
             self.table1_created = False
+        self.tree1.bind("<BackSpace>",lambda e:self.tree1.delete(self.tree1.selection()))
 
     def get_calendar_events(self,service,c_id):
         calendar_list = service.calendarList().list().execute()
-
-        for calendar in calendar_list['items']:
-            print(f"Calendar name: {calendar['summary']}, Calendar ID: {calendar['id']}")
-
+        self.c_id=c_id
 
         self.now = '1970-01-01T00:00:00Z'  # 'Z' indicates UTC time
         self.events_result = service.events().list(
-            calendarId=c_id, timeMin=self.now, maxResults=10, singleEvents=True,
+            calendarId=self.c_id, timeMin=self.now, maxResults=15, singleEvents=True,
             orderBy='startTime').execute()
         
         self.events = self.events_result.get('items', [])
         for i in self.events:
-            service.events().delete(calendarId=c_id, eventId=i['id']).execute()
+            service.events().delete(calendarId=self.c_id, eventId=i['id']).execute()
     
         # If there are events, print their details
         if not self.events:
             print('No upcoming events found.')
+            self.c_id=None
         else:
+            self.c_id=None
             return self.events
+
+    def entering(self,parents,tree):
+        #place the event summary
+        self.entry1=Entry(parents,justify='left')
+        self.entry1.insert(0,"input event")
+        self.entry1.pack(side="left",fill=BOTH, expand=True)
+            #place start time
+        self.entry2=Entry(parents,justify='left')
+        self.entry2.insert(0,"00:00")
+        self.entry2.pack(side="left",fill=BOTH, expand=True)
+
+        #place end time
+        self.entry3=Entry(parents,justify='left')
+        self.entry3.insert(0,"00:00")
+        self.entry3.pack(side="left",fill=BOTH, expand=True)
+            #button
+        style = ttk.Style()
+        # Configure the style for TButton
+        style.configure("Custom.TButton", background="green", foreground="white")
+        self.btn=ttk.Button(parents,text="ENTER",command=lambda:self.register(self.entry1,self.entry2,self.entry3,tree),style="Custom.TButton")
+        self.btn.pack(side="left",fill=BOTH, expand=True)
+
+    def tree_acces(self,access,values):
+        access.insert(parent='', index=END, values=values)
+
+    def register(self,event,strt,end,acs):
+        values = [event.get(), strt.get(), end.get()]
+        pattern = r'^(?:[01]\d|2[0-3]):[0-5]\d$'
+        if bool(re.match(pattern, values[1])) and bool(re.match(pattern, values[2])):
+            self.tree_acces(acs,values) 
 
     def style_treeview(self):
         # Style the Treeview widget
@@ -309,14 +384,61 @@ class Frame2(Frame):
         local_time = utc_time.strftime("%H:%M")
         return local_time
 
+    def save(self):
+        for a in all_items:
+            event = {
+                'summary': f'{a[0]}',
+                'location': 'college st andre',
+                'description': 'Time Table',
+                'start': {
+                    'dateTime': f'2025-01-01T{a[1][:2]}:{a[1][3:]}:00+02:00',  # Adjust time zone as needed
+                    'timeZone': 'Africa/Maputo',
+                },
+                'end': {
+                    'dateTime': f'2025-01-01T{a[1][:2]}:{a[1][3:]}:00+02:00',  # Adjust time zone as needed
+                    'timeZone': 'Africa/Maputo',
+                },
+                'recurrence': [
+            'RRULE:FREQ=DAILY;COUNT=1'  # This sets it to repeat daily for 10 occurrences
+        ],
+                'reminders': {
+                    'useDefault': True
+                    
+                },
+                'eventType': 'default'  
+            }
+            event = service.events().insert(calendarId=d[0], body=event).execute()
+
+        for a in all_items1:
+            event = {
+                'summary': f'{a[0]}',
+                'location': 'college st andre',
+                'description': 'Time Table',
+                'start': {
+                    'dateTime': f'2025-01-01T{a[1][:2]}:{a[1][3:]}:00+02:00',  # Adjust time zone as needed
+                    'timeZone': 'Africa/Maputo',
+                },
+                'end': {
+                    'dateTime': f'2025-01-01T{a[2][:2]}:{a[2][3:]}:00+02:00',  # Adjust time zone as needed
+                    'timeZone': 'Africa/Maputo',
+                },
+                'recurrence': [
+            'RRULE:FREQ=DAILY;COUNT=1'  # This sets it to repeat daily for 1 occurrence
+        ],
+                'reminders': {
+                    'useDefault': True
+                    
+                },
+                'eventType': 'default'
+            }
+            event = service.events().insert(calendarId=d[1], body=event).execute()
+
+
 
     def logout(self):
         if os.path.exists('token.pickle'):
             os.remove('token.pickle')
             print("Logged out successfully!")
-
-        self.table1_frame.place_forget()
-        self.table2_frame.place_forget()
 
         # You can also clear the credentials object if it's in memory
         self.switch_frame_callback()
@@ -333,3 +455,5 @@ if __name__ == "__main__":
     root = Tk()
     app = Application(root)
     root.mainloop()
+
+"""LORD OF THE MYSTERIES"""
