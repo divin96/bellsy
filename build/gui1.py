@@ -1,9 +1,8 @@
 from pathlib import Path
 from tkinter import Tk, Canvas, Button, PhotoImage, Frame,ttk,BOTH,Entry,END
 import os
-import datetime
+#import datetime
 import re
-
 
 
 # Define OUTPUT_PATH for assets
@@ -145,6 +144,7 @@ class Frame1(Frame):
         for calendar in calendar_list['items']:
             if calendar['summary']!="Birthdays":
                 d.append(calendar['id'])
+        print(d)
 
 
     # Hover effect for Button 1
@@ -279,7 +279,7 @@ class Frame2(Frame):
             self.tree1.column("End Time", width=150)
 
             # Fetch events for the second calendar
-            events_data = self.get_calendar_events(service, d[1])
+            events_data = self.get_calendar_events(service, d[-1])
             if events_data is not None:
                 self.tempo= events_data
             # Insert event data into table
@@ -294,7 +294,8 @@ class Frame2(Frame):
                     global all_items
                     all_items = [self.tree.item(item)["values"] for item in self.tree.get_children("")]
                     for a in all_items1:
-                        self.tree1.insert("", "end", values=tuple(a))           
+                        self.tree1.insert("", "end", values=tuple(a))   
+                        
             except Exception as err:
                 print(err)
 
