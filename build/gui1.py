@@ -1,7 +1,8 @@
+#code developed by none other than the greate Divin(I.D.D)
 from pathlib import Path
 from tkinter import Tk, Canvas, Button, PhotoImage, Frame,ttk,BOTH,Entry,END
 import os
-#import datetime
+import datetime
 import re
 
 
@@ -241,9 +242,9 @@ class Frame2(Frame):
                         end_time = self.convert_utc_to_local(str(event["end"]['dateTime']))
                         self.tree.insert("", "end", values=(event["summary"], start_time, end_time))
                 else:
-                    global all_items1
-                    all_items1 = [self.tree1.item(item)["values"] for item in self.tree1.get_children("")]
-                    for a in all_items:
+                    
+                    self.all_items1 = [self.tree1.item(item)["values"] for item in self.tree1.get_children("")]
+                    for a in self.all_items:
                         self.tree.insert("", "end", values=tuple(a))
 
             except Exception as err:
@@ -292,9 +293,9 @@ class Frame2(Frame):
                         self.tree1.insert("", "end", values=(event["summary"], start_time, end_time))
                 
                 else:
-                    global all_items
-                    all_items = [self.tree.item(item)["values"] for item in self.tree.get_children("")]
-                    for a in all_items1:
+                    
+                    self.all_items = [self.tree.item(item)["values"] for item in self.tree.get_children("")]
+                    for a in self.all_items1:
                         self.tree1.insert("", "end", values=tuple(a))   
                         
             except Exception as err:
@@ -387,7 +388,7 @@ class Frame2(Frame):
         return local_time
 
     def save(self):
-        for a in all_items:
+        for a in self.all_items:
             event = {
                 'summary': f'{a[0]}',
                 'location': 'college st andre',
@@ -411,7 +412,7 @@ class Frame2(Frame):
             }
             event = service.events().insert(calendarId=d[0], body=event).execute()
 
-        for a in all_items1:
+        for a in self.all_items1:
             event = {
                 'summary': f'{a[0]}',
                 'location': 'college st andre',
