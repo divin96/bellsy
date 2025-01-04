@@ -432,7 +432,7 @@ class Frame2(Frame):
                 },
                 'eventType': 'default'
             }
-            event = service.events().insert(calendarId=d[1], body=event).execute()
+            event = service.events().insert(calendarId=d[-1], body=event).execute()
 
 
 
