@@ -24,6 +24,7 @@ class Application:
     def __init__(self, window):
         self.window = window
         self.window.geometry("900x700")
+        self.window.title('BellSys')
         self.window.configure(bg="#FFFFFF")
         self.window.resizable(False, False)
 
