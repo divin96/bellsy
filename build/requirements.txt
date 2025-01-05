@@ -1,0 +1,5 @@
+blynk-library-python
+google-auth
+google-auth-oauthlib
+google-api-python-client
+tkinter 
