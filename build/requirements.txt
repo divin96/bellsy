@@ -2,4 +2,6 @@ blynk-library-python
 google-auth
 google-auth-oauthlib
 google-api-python-client
-tkinter 
+tkinter
+Adafruit-SSD1306
+gpiozero
