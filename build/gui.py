@@ -1,3 +1,4 @@
+#run in thonny
 import time
 import requests
 import os
